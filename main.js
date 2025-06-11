@@ -1,7 +1,7 @@
 // ==Bookmarklet Script==
 // @name         OpenPhone Gemini Summarizer (Quick Action Button)
 // @description  Adds a button to the message quick actions bar to summarize conversations with Gemini.
-// @author       Douglas Wolfanger
+// @author       ilakskills
 // @version      8.0
 // ==/Bookmarklet Script==
 
