@@ -1,7 +1,7 @@
 // ==Bookmarklet Script==
-// @name         OpenPhone Gemini Summarizer (Vision & UI Pro)
+// @name         OpenPhone Gemini Summarizer (Vision Pro - Patched)
 // @description  Adds a button to summarize conversations with Gemini, including images. Features a preview modal, clipboard copy, and toast notifications.
-// @version      12.0
+// @version      13.0
 // @author       ilakskills
 // ==/Bookmarklet Script==
 
@@ -61,119 +61,68 @@ Do not use "USTJl43nQ9" as the name of the caller; use their phone number instea
 `;
     // --- END OF CONFIGURATION ---
 
-    // --- SVG Icons for the buttons ---
     const geminiIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="currentColor" d="M10 2.5a.75.75 0 0 1 .75.75V4a.75.75 0 0 1-1.5 0V3.25a.75.75 0 0 1 .75-.75zM10 16a.75.75 0 0 1 .75.75v1.25a.75.75 0 0 1-1.5 0V16.75a.75.75 0 0 1 .75-.75zM5.56 4.81a.75.75 0 0 1 1.06 0l.88.88a.75.75 0 0 1-1.06 1.06l-.88-.88a.75.75 0 0 1 0-1.06zM12.5 12.5a.75.75 0 0 1 1.06 0l.88.88a.75.75 0 0 1-1.06 1.06l-.88-.88a.75.75 0 0 1 0-1.06zM2 9.25a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 2 9.25zm14.25.75a.75.75 0 0 0 1.5 0v-1.5a.75.75 0 0 0-1.5 0v1.5zM5.56 14.13a.75.75 0 0 1 0-1.06l.88-.88a.75.75 0 0 1 1.06 1.06l-.88.88a.75.75 0 0 1-1.06 0zM12.5 6.56a.75.75 0 0 1 0-1.06l.88-.88a.75.75 0 1 1 1.06 1.06l-.88.88a.75.75 0 0 1-1.06 0z"></path></svg>`;
     const settingsIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="currentColor" d="M10.667 1.875A.833.833 0 0 0 10 1.25a.833.833 0 0 0-.667.625l-.234.937a5.218 5.218 0 0 0-1.593.84l-.87-.39a.833.833 0 0 0-.933.277L4.29 5.293a.833.833 0 0 0 .278.933l.794.516a5.233 5.233 0 0 0 0 1.916l-.794.516a.833.833 0 0 0-.278.933l1.414 1.414a.833.833 0 0 0 .933.278l.87-.39c.47.318.99.577 1.592.839l.234.937A.833.833 0 0 0 10 18.75a.833.833 0 0 0 .667-.625l.234-.937c.603-.262 1.122-.521 1.593-.84l.87.39a.833.833 0 0 0 .933-.277l1.414-1.414a.833.833 0 0 0-.278-.933l-.794-.516a5.233 5.233 0 0 0 0-1.916l.794-.516a.833.833 0 0 0 .278-.933L15.707 3.88a.833.833 0 0 0-.933-.278l-.87.39a5.218 5.218 0 0 0-1.592-.84l-.234-.937zM10 12.5a2.5 2.5 0 1 1 0-5a2.5 2.5 0 0 1 0 5z"></path></svg>`;
     const loadingSpinnerSVG = `<svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><style>.spinner_Gu6E{animation:spinner_gY4H 2s linear infinite}.spinner_gYuN{animation-delay:-.5s}.spinner_4j7o{animation-delay:-1s}.spinner_M323{animation-delay:-1.5s}@keyframes spinner_gY4H{0%,100%{r:1.5px}50%{r:3px}}</style><circle class="spinner_Gu6E" cx="12" cy="3" r="1.5" fill="currentColor"/><circle class="spinner_Gu6E spinner_gYuN" cx="12" cy="21" r="1.5" fill="currentColor"/><circle class="spinner_Gu6E spinner_4j7o" cx="3" cy="12" r="1.5" fill="currentColor"/><circle class="spinner_Gu6E spinner_M323" cx="21" cy="12" r="1.5" fill="currentColor"/></svg>`;
     
     // --- UI HELPER FUNCTIONS ---
-
-    /**
-     * Injects CSS for the modal, toast notifications, and other UI elements into the page.
-     * This keeps the main script cleaner.
-     */
-    const injectStyles = () => {
-        const styleId = 'gemini-summarizer-styles';
-        if (document.getElementById(styleId)) return;
-
-        const style = document.createElement('style');
-        style.id = styleId;
-        style.innerHTML = `
-            .gemini-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; }
-            .gemini-modal-content { background-color: #fff; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); width: 90%; max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; }
-            .gemini-modal-header { padding: 16px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
-            .gemini-modal-header h2 { margin: 0; font-size: 18px; color: #333; }
-            .gemini-modal-close { font-size: 24px; font-weight: bold; cursor: pointer; color: #888; border: none; background: none; }
-            .gemini-modal-body { padding: 16px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; background-color: #f9f9f9; color: #222; line-height: 1.6; }
-            .gemini-modal-footer { padding: 12px 16px; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; justify-content: flex-end; }
-            .gemini-modal-button { padding: 8px 16px; border-radius: 6px; border: 1px solid #ccc; background-color: #f0f0f0; cursor: pointer; font-weight: 500; }
-            .gemini-modal-button:hover { background-color: #e0e0e0; }
-            .gemini-modal-button.primary { background-color: #007bff; color: white; border-color: #007bff; }
-            .gemini-modal-button.primary:hover { background-color: #0056b3; }
-            .gemini-toast { position: fixed; top: 20px; right: 20px; background-color: #333; color: white; padding: 12px 20px; border-radius: 6px; z-index: 10001; font-size: 14px; transition: opacity 0.5s ease-in-out; }
-            .gemini-toast.success { background-color: #28a745; }
-            .gemini-toast.error { background-color: #dc3545; }
-        `;
-        document.head.appendChild(style);
-    };
-
-    /**
-     * Displays a temporary notification message on the screen.
-     * @param {string} message - The text to display.
-     * @param {'success'|'error'} type - The type of toast, for styling.
-     */
-    const showToast = (message, type = 'success') => {
-        const toast = document.createElement('div');
-        toast.className = `gemini-toast ${type}`;
-        toast.textContent = message;
-        document.body.appendChild(toast);
-        setTimeout(() => {
-            toast.style.opacity = '0';
-            setTimeout(() => toast.remove(), 500);
-        }, 3000);
-    };
-
-    /**
-     * Displays the AI-generated summary in a modal window.
-     * @param {string} summaryText - The text of the summary.
-     * @param {string} filename - The generated filename for the download.
-     */
-    const showSummaryModal = (summaryText, filename) => {
-        const overlay = document.createElement('div');
-        overlay.className = 'gemini-modal-overlay';
-
-        overlay.innerHTML = `
-            <div class="gemini-modal-content">
-                <div class="gemini-modal-header">
-                    <h2>AI Summary</h2>
-                    <button class="gemini-modal-close">×</button>
-                </div>
-                <div class="gemini-modal-body">${summaryText}</div>
-                <div class="gemini-modal-footer">
-                    <button class="gemini-modal-button download-btn">Download .txt</button>
-                    <button class="gemini-modal-button primary copy-btn">Copy to Clipboard</button>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(overlay);
-
-        const closeModal = () => overlay.remove();
-        
-        overlay.querySelector('.gemini-modal-close').addEventListener('click', closeModal);
-        overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
-
-        overlay.querySelector('.copy-btn').addEventListener('click', () => {
-            navigator.clipboard.writeText(summaryText).then(() => {
-                showToast('Summary copied to clipboard!');
-            }).catch(err => {
-                showToast('Failed to copy text.', 'error');
-                console.error('Clipboard copy failed:', err);
-            });
-        });
-
-        overlay.querySelector('.download-btn').addEventListener('click', () => {
-            const blob = new Blob([summaryText], { type: 'text/plain;charset=utf-8' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
-        });
-    };
-
-    // --- CORE LOGIC FUNCTIONS ---
+    const injectStyles = () => { /* ... (Logic unchanged) ... */ const e="gemini-summarizer-styles";if(document.getElementById(e))return;const t=document.createElement("style");t.id=e,t.innerHTML=`\n            .gemini-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center; }\n            .gemini-modal-content { background-color: #fff; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); width: 90%; max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; }\n            .gemini-modal-header { padding: 16px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }\n            .gemini-modal-header h2 { margin: 0; font-size: 18px; color: #333; }\n            .gemini-modal-close { font-size: 24px; font-weight: bold; cursor: pointer; color: #888; border: none; background: none; }\n            .gemini-modal-body { padding: 16px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; background-color: #f9f9f9; color: #222; line-height: 1.6; }\n            .gemini-modal-footer { padding: 12px 16px; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; justify-content: flex-end; }\n            .gemini-modal-button { padding: 8px 16px; border-radius: 6px; border: 1px solid #ccc; background-color: #f0f0f0; cursor: pointer; font-weight: 500; }\n            .gemini-modal-button:hover { background-color: #e0e0e0; }\n            .gemini-modal-button.primary { background-color: #007bff; color: white; border-color: #007bff; }\n            .gemini-modal-button.primary:hover { background-color: #0056b3; }\n            .gemini-toast { position: fixed; top: 20px; right: 20px; background-color: #333; color: white; padding: 12px 20px; border-radius: 6px; z-index: 10001; font-size: 14px; transition: opacity 0.5s ease-in-out; }\n            .gemini-toast.success { background-color: #28a745; }\n            .gemini-toast.error { background-color: #dc3545; }\n        `,document.head.appendChild(t)};
+    const showToast = (message, type = 'success') => { /* ... (Logic unchanged) ... */ const e=document.createElement("div");e.className=`gemini-toast ${type}`,e.textContent=message,document.body.appendChild(e),setTimeout(()=>{e.style.opacity="0",setTimeout(()=>e.remove(),500)},3e3)};
+    const showSummaryModal = (summaryText, filename) => { /* ... (Logic unchanged) ... */ const e=document.createElement("div");e.className="gemini-modal-overlay",e.innerHTML=`\n            <div class="gemini-modal-content">\n                <div class="gemini-modal-header">\n                    <h2>AI Summary</h2>\n                    <button class="gemini-modal-close">×</button>\n                </div>\n                <div class="gemini-modal-body">${summaryText}</div>\n                <div class="gemini-modal-footer">\n                    <button class="gemini-modal-button download-btn">Download .txt</button>\n                    <button class="gemini-modal-button primary copy-btn">Copy to Clipboard</button>\n                </div>\n            </div>\n        `,document.body.appendChild(e);const t=()=>e.remove();e.querySelector(".gemini-modal-close").addEventListener("click",t),e.addEventListener("click",n=>{n.target===e&&t()}),e.querySelector(".copy-btn").addEventListener("click",()=>{navigator.clipboard.writeText(summaryText).then(()=>{showToast("Summary copied to clipboard!")}).catch(e=>{showToast("Failed to copy text.","error"),console.error("Clipboard copy failed:",e)})}),e.querySelector(".download-btn").addEventListener("click",()=>{const e=new Blob([summaryText],{type:"text/plain;charset=utf-8"}),t=document.createElement("a");t.href=URL.createObjectURL(e),t.download=filename,document.body.appendChild(t),t.click(),document.body.removeChild(t),URL.revokeObjectURL(t.href)})};
     
+    // --- CORE LOGIC FUNCTIONS ---
     const getApiKey = () => { /* ... (Logic unchanged) ... */ const e="gemini_api_key_storage";let t=localStorage.getItem(e);return t||(t=window.prompt("Please enter your Gemini API Key. It will be stored locally for future use."),t&&localStorage.setItem(e,t)),t};
-    const getAuthToken = () => { /* ... (Logic unchanged) ... */ return new Promise((resolve,reject)=>{let e=null;const t=window.fetch,n=XMLHttpRequest.prototype.setRequestHeader;window.fetch=function(...n){const o=n[1]?.headers;o&&(o.Authorization||o.authorization)&&(e=o.Authorization||o.authorization);return t.apply(this,n)};XMLHttpRequest.prototype.setRequestHeader=function(t,n){"authorization"===t.toLowerCase()&&(e=n);return n.apply(this,arguments)};const o=()=>{window.fetch=t;XMLHttpRequest.prototype.setRequestHeader=n};let s=0;const a=setInterval(()=>{if(e)clearInterval(a),o(),resolve(e);else if(s++>150){clearInterval(a),o();reject(new Error("Auth token timeout."))}},100)})};
     const generateUsefulFilename = (conversationId) => { /* ... (Logic unchanged) ... */ const e=new Date,t=e=>e.toString().padStart(2,"0"),n=`${e.getFullYear()}-${t(e.getMonth()+1)}-${t(e.getDate())}_${t(e.getHours())}-${t(e.getMinutes())}`;let o=document.querySelector('[data-test-id="conversation-header-title"]');o=o&&o.textContent.trim()?o.textContent.trim().replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"-"):conversationId;return`${n}_${o}_OpenPhone_Summary.txt`};
 
     /**
-     * The main function that runs when the button is clicked.
-     * Now handles multimodal (image) processing.
+     * Spies on BOTH fetch and XMLHttpRequest to capture the auth token.
+     * This version is corrected to prevent errors.
      */
+    const getAuthToken = () => {
+        return new Promise((resolve, reject) => {
+            let capturedAuthToken = null;
+            const originalFetch = window.fetch;
+            const originalXhrSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
+
+            const cleanup = () => {
+                window.fetch = originalFetch;
+                XMLHttpRequest.prototype.setRequestHeader = originalXhrSetRequestHeader;
+            };
+
+            // Spy on fetch
+            window.fetch = function(...args) {
+                const headers = args[1]?.headers;
+                if (headers && (headers.Authorization || headers.authorization)) {
+                    capturedAuthToken = headers.Authorization || headers.authorization;
+                }
+                return originalFetch.apply(this, args);
+            };
+
+            // Spy on XMLHttpRequest
+            XMLHttpRequest.prototype.setRequestHeader = function(header, value) {
+                if (header.toLowerCase() === 'authorization') {
+                    capturedAuthToken = value;
+                }
+                // *** THE FIX IS HERE: We correctly call the original function ***
+                return originalXhrSetRequestHeader.apply(this, arguments);
+            };
+
+            // Wait for the token
+            let attempts = 0;
+            const interval = setInterval(() => {
+                if (capturedAuthToken) {
+                    clearInterval(interval);
+                    cleanup();
+                    resolve(capturedAuthToken);
+                } else if (attempts++ > 150) { // 15-second timeout
+                    clearInterval(interval);
+                    cleanup();
+                    reject(new Error("Auth token timeout. Please refresh and try again."));
+                }
+            }, 100);
+        });
+    };
+
     const runSummaryProcess = async (buttonElement) => {
         buttonElement.innerHTML = loadingSpinnerSVG;
         buttonElement.disabled = true;
@@ -199,7 +148,6 @@ Do not use "USTJl43nQ9" as the name of the caller; use their phone number instea
             if (!apiResponse.ok) throw new Error(`OpenPhone API request failed: ${apiResponse.status}`);
             const openPhoneData = await apiResponse.json();
 
-            // --- NEW: Image Processing Logic ---
             const imageParts = [];
             const textPart = { text: GEMINI_PROMPT + JSON.stringify(openPhoneData, null, 2) };
             
@@ -209,40 +157,29 @@ Do not use "USTJl43nQ9" as the name of the caller; use their phone number instea
 
             if (imageActivities.length > 0) {
                 showToast(`Found ${imageActivities.length} image(s). Fetching...`);
-                // This function converts an image URL to a Gemini API part
                 const urlToGeminiPart = async (mediaItem) => {
                     try {
-                        // NOTE: This relies on OpenPhone's Google Storage allowing cross-origin requests.
-                        // If this fails, a CORS proxy would be needed as a workaround.
                         const response = await fetch(mediaItem.url);
                         if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
                         const blob = await response.blob();
                         return new Promise((resolve, reject) => {
                             const reader = new FileReader();
                             reader.onloadend = () => {
-                                // The result includes the "data:mime/type;base64," prefix. We need to strip it.
                                 const base64Data = reader.result.split(',')[1];
-                                resolve({
-                                    inlineData: {
-                                        mimeType: blob.type,
-                                        data: base64Data
-                                    }
-                                });
+                                resolve({ inlineData: { mimeType: blob.type, data: base64Data } });
                             };
                             reader.onerror = reject;
                             reader.readAsDataURL(blob);
                         });
                     } catch (error) {
                         console.error(`Skipping image ${mediaItem.url} due to error:`, error);
-                        return null; // Return null on failure
+                        return null;
                     }
                 };
-
                 const imagePromises = imageActivities.flatMap(activity => activity.media.map(urlToGeminiPart));
                 const resolvedImageParts = await Promise.all(imagePromises);
-                imageParts.push(...resolvedImageParts.filter(part => part !== null)); // Add only successful parts
+                imageParts.push(...resolvedImageParts.filter(part => part !== null));
             }
-            // --- End of Image Processing Logic ---
 
             const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
             const geminiPayload = { contents: [{ parts: [textPart, ...imageParts] }] };
@@ -268,23 +205,18 @@ Do not use "USTJl43nQ9" as the name of the caller; use their phone number instea
         }
     };
     
-    /**
-     * Creates and injects the quick action buttons into the UI.
-     */
     const createAndInjectButtons = () => {
         const targetContainer = document.getElementById('message-quick-actions');
         if (!targetContainer) {
             console.error("❌ Could not find the quick actions container. Is a conversation open?");
             return;
         }
-
         const templateButton = targetContainer.querySelector('button');
         if (!templateButton) {
             console.error("❌ Could not find a template button to clone.");
             return;
         }
 
-        // --- Create Gemini Button ---
         const geminiButton = templateButton.cloneNode(true);
         geminiButton.id = 'gemini-quick-action-button';
         geminiButton.innerHTML = geminiIconSVG;
@@ -292,7 +224,6 @@ Do not use "USTJl43nQ9" as the name of the caller; use their phone number instea
         geminiButton.removeAttribute('aria-labelledby');
         geminiButton.addEventListener('click', () => runSummaryProcess(geminiButton));
         
-        // --- Create Settings Button ---
         const settingsButton = templateButton.cloneNode(true);
         settingsButton.id = 'gemini-settings-button';
         settingsButton.innerHTML = settingsIconSVG;
@@ -311,7 +242,6 @@ Do not use "USTJl43nQ9" as the name of the caller; use their phone number instea
         console.log("✅ Gemini Summarizer buttons successfully added.");
     };
     
-    // --- SCRIPT INITIALIZATION ---
     injectStyles();
     createAndInjectButtons();
 })();
