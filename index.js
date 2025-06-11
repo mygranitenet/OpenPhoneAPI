@@ -7,7 +7,7 @@
 
 (() => {
     // --- START OF CONFIGURATION ---
-    const GEMINI_API_KEY = "";
+    //const GEMINI_API_KEY = "";
     const GEMINI_PROMPT = `Please analyze the following conversation activity from OpenPhone, which is provided in JSON format. Provide a concise summary of the conversation. Focus on the main topic, any action items, and the overall sentiment.\n\nJSON DATA:\n\n`;
     // --- END OF CONFIGURATION ---
 
