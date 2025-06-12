@@ -1,7 +1,7 @@
 // ==Bookmarklet Script==
 // @name         OpenPhone Gemini Summarizer (Stable & Conversational)
 // @description  Waits for UI to load, then adds per-message buttons for point-in-time, conversational summaries with vision support.
-// @version      18.0
+// @version      19.0
 // @author       ilakskills
 // ==/Bookmarklet Script==
 
@@ -27,11 +27,7 @@
     // --- CORE LOGIC ---
     const getAuthToken = () => { return new Promise((resolve,reject)=>{let e=null;const t=window.fetch,n=XMLHttpRequest.prototype.setRequestHeader;const o=()=>{window.fetch=t,XMLHttpRequest.prototype.setRequestHeader=n};window.fetch=function(...n){const s=n[1]?.headers;return s&&(s.Authorization||s.authorization)&&(e=s.Authorization||s.authorization),t.apply(this,n)},XMLHttpRequest.prototype.setRequestHeader=function(t,s){"authorization"===t.toLowerCase()&&(e=s);return n.apply(this,arguments)};let s=0;const i=setInterval(()=>{e?(clearInterval(i),o(),resolve(e)):s++>150&&(clearInterval(i),o(),reject(new Error("Auth token timeout. Please refresh and try again.")))},100)})};
     const generateUsefulFilename = (conversationId) => { const e=new Date,t=e=>e.toString().padStart(2,"0"),n=`${e.getFullYear()}-${t(e.getMonth()+1)}-${t(e.getDate())}_${t(e.getHours())}-${t(e.getMinutes())}`;let o=document.querySelector('[data-test-id="conversation-header-title"]');return o=o&&o.textContent.trim()?o.textContent.trim().replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"-"):conversationId,`${n}_${o}_OpenPhone_Summary.txt`};
-    const buildDynamicPrompt = (selectedSections) => {
-        let structuredFormat = '';
-        selectedSections.forEach(key => { if (PROMPT_SECTIONS[key]) structuredFormat += PROMPT_SECTIONS[key] + '\n'; });
-        return BASE_PROMPT_HEADER + '\n\n' + structuredFormat + '\n' + BASE_PROMPT_FOOTER;
-    };
+    const buildDynamicPrompt = (selectedSections) => { let e="";selectedSections.forEach(t=>{PROMPT_SECTIONS[t]&&(e+=PROMPT_SECTIONS[t]+"\n")});return BASE_PROMPT_HEADER+e+BASE_PROMPT_FOOTER};
     const runSummaryProcess = async (activityId, selectedSections) => {
         const apiKey = localStorage.getItem(API_KEY_STORAGE_NAME);
         if (!apiKey) { showToast("API Key not set. Please set it in Settings (gear icon).", 'error'); return; }
@@ -75,77 +71,82 @@
     };
     
     // --- UI INJECTION & OBSERVER LOGIC ---
-    const initializeWhenReady = () => {
+    
+    /**
+     * Watches for the conversation list to appear and then initializes the per-message buttons.
+     */
+    const initMessageObserver = () => {
         let attempts = 0;
-        console.log("Waiting for OpenPhone UI to be ready...");
-
         const interval = setInterval(() => {
-            const conversationList = document.querySelector('[data-testid="virtualized-conversation-list"]');
-            const quickActionContainer = document.getElementById('message-quick-actions');
-            
-            if (conversationList && quickActionContainer) {
+            const targetNode = document.querySelector('[data-testid="virtualized-conversation-list"]');
+            if (targetNode) {
                 clearInterval(interval);
-                console.log("✅ OpenPhone UI is ready. Initializing Summarizer...");
-                injectStyles();
-                setupObserversAndInjectUI();
+                console.log("✅ Conversation list found. Initializing per-message buttons.");
+
+                const addButtonToMessage = (actionContainer) => {
+                    if (actionContainer.querySelector('.per-message-gemini-btn')) return;
+                    const activityItem = actionContainer.closest('[data-testid="activity-list-item"]');
+                    if (!activityItem || !activityItem.id) return;
+                    
+                    const btn = document.createElement('button');
+                    btn.className = 'per-message-gemini-btn';
+                    btn.title = "Summarize up to this point";
+                    btn.innerHTML = geminiIconSVG;
+                    btn.addEventListener('click', (e) => { e.stopPropagation(); e.preventDefault(); showExecutionOptionsModal(activityItem.id); });
+                    actionContainer.prepend(btn);
+                };
+
+                const conversationObserver = new MutationObserver((mutations) => {
+                    for (const mutation of mutations) {
+                        for (const node of mutation.addedNodes) {
+                            if (node.nodeType === 1) { // ELEMENT_NODE
+                                const containers = node.querySelectorAll('[data-testid="activity-item-actions-container"]');
+                                containers.forEach(addButtonToMessage);
+                            }
+                        }
+                    }
+                });
+                conversationObserver.observe(targetNode, { childList: true, subtree: true });
+                targetNode.querySelectorAll('[data-testid="activity-item-actions-container"]').forEach(addButtonToMessage);
             } else if (attempts++ > 60) { // Timeout after 15 seconds
                 clearInterval(interval);
-                console.error("❌ Summarizer could not start. OpenPhone UI did not load as expected.");
+                console.error("❌ Could not initialize per-message buttons: Conversation list not found.");
             }
         }, 250);
     };
 
-    const setupObserversAndInjectUI = () => {
-        const addButtonToMessage = (actionContainer) => {
-            if (actionContainer.querySelector('.per-message-gemini-btn')) return;
-            const activityItem = actionContainer.closest('[data-testid="activity-list-item"]');
-            if (!activityItem || !activityItem.id) return;
-            const activityId = activityItem.id;
-
-            const btn = document.createElement('button');
-            btn.className = 'per-message-gemini-btn';
-            btn.title = "Summarize up to this point";
-            btn.innerHTML = geminiIconSVG;
-            btn.addEventListener('click', (e) => { e.stopPropagation(); e.preventDefault(); showExecutionOptionsModal(activityId); });
-            actionContainer.prepend(btn);
-        };
-
-        const conversationObserver = new MutationObserver((mutations) => {
-            for (const mutation of mutations) {
-                for (const node of mutation.addedNodes) {
-                    if (node.nodeType === 1) { // ELEMENT_NODE
-                        if (node.matches('[data-testid="activity-item-actions-container"]')) {
-                            addButtonToMessage(node);
-                        } else {
-                            const containers = node.querySelectorAll('[data-testid="activity-item-actions-container"]');
-                            containers.forEach(addButtonToMessage);
-                        }
+    /**
+     * Watches for the quick actions bar to appear and then initializes the settings button.
+     */
+    const initSettingsButtonObserver = () => {
+        let attempts = 0;
+        const interval = setInterval(() => {
+            const targetContainer = document.getElementById('message-quick-actions');
+            if (targetContainer) {
+                clearInterval(interval);
+                console.log("✅ Quick actions bar found. Initializing settings button.");
+                if (!document.getElementById('gemini-settings-button')) {
+                    const templateButton = targetContainer.querySelector('button');
+                    if(templateButton) {
+                        const settingsButton = templateButton.cloneNode(true);
+                        settingsButton.id = 'gemini-settings-button';
+                        settingsButton.innerHTML = settingsIconSVG;
+                        settingsButton.title = "API Key Settings";
+                        settingsButton.removeAttribute('aria-labelledby');
+                        settingsButton.addEventListener('click', showApiKeyModal);
+                        targetContainer.prepend(settingsButton);
                     }
                 }
+            } else if (attempts++ > 60) { // Timeout after 15 seconds
+                clearInterval(interval);
+                console.warn("⚠️ Could not add settings gear: Quick actions bar not found.");
             }
-        });
-        
-        const targetNode = document.querySelector('[data-testid="virtualized-conversation-list"]');
-        conversationObserver.observe(targetNode, { childList: true, subtree: true });
-        targetNode.querySelectorAll('[data-testid="activity-item-actions-container"]').forEach(addButtonToMessage);
-        console.log("✅ Per-message button observer is active.");
-
-        // Add the static settings button at the bottom
-        const targetContainer = document.getElementById('message-quick-actions');
-        if (targetContainer && !document.getElementById('gemini-settings-button')) {
-            const templateButton = targetContainer.querySelector('button');
-            if (templateButton) {
-                const settingsButton = templateButton.cloneNode(true);
-                settingsButton.id = 'gemini-settings-button';
-                settingsButton.innerHTML = settingsIconSVG;
-                settingsButton.title = "API Key Settings";
-                settingsButton.removeAttribute('aria-labelledby');
-                settingsButton.addEventListener('click', showApiKeyModal);
-                targetContainer.prepend(settingsButton);
-                console.log("✅ Settings gear button successfully added.");
-            }
-        }
+        }, 250);
     };
     
-    initializeWhenReady();
+    // --- SCRIPT INITIALIZATION ---
+    console.log("🚀 Initializing OpenPhone Gemini Summarizer v19...");
+    injectStyles();
+    initMessageObserver();
+    initSettingsButtonObserver();
 })();
