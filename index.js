@@ -1,7 +1,7 @@
 // ==Bookmarklet Script==
 // @name         OpenPhone AI Summarizer (Final Stable Build)
-// @description  Uses a floating button and stable browser prompts. Summarizes with Gemini/GPT and enables conversational refinement.
-// @version      32.0
+// @description  Uses a floating button and stable browser prompts for settings. Summarizes with Gemini/GPT, supports vision and chat.
+// @version      33.0
 // @author       ilakskills
 // ==/Bookmarklet Script==
 
@@ -19,91 +19,20 @@
     const settingsIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 20 20"><path fill="currentColor" d="M10.667 1.875A.833.833 0 0 0 10 1.25a.833.833 0 0 0-.667.625l-.234.937a5.218 5.218 0 0 0-1.593.84l-.87-.39a.833.833 0 0 0-.933.277L4.29 5.293a.833.833 0 0 0 .278.933l.794.516a5.233 5.233 0 0 0 0 1.916l-.794.516a.833.833 0 0 0-.278.933l1.414 1.414a.833.833 0 0 0 .933.278l.87-.39c.47.318.99.577 1.592.839l.234.937A.833.833 0 0 0 10 18.75a.833.833 0 0 0 .667-.625l.234-.937c.603-.262 1.122-.521 1.593-.84l.87.39a.833.833 0 0 0 .933-.277l1.414-1.414a.833.833 0 0 0-.278-.933l-.794-.516a5.233 5.233 0 0 0 0-1.916l.794-.516a.833.833 0 0 0 .278-.933L15.707 3.88a.833.833 0 0 0-.933-.278l-.87.39a5.218 5.218 0 0 0-1.592-.84l-.234-.937zM10 12.5a2.5 2.5 0 1 1 0-5a2.5 2.5 0 0 1 0 5z"></path></svg>`;
     const sendIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="currentColor" d="M2.525 2.525a.75.75 0 0 1 .91-.073l13.5 6.75a.75.75 0 0 1 0 1.196l-13.5 6.75a.75.75 0 0 1-1.002-1.123L3.89 10 2.433 3.571a.75.75 0 0 1 .092-1.046z"></path></svg>`;
     
-    // --- UI HELPER FUNCTIONS ---
-    const injectStyles=()=>{const e="gemini-summarizer-styles";if(document.getElementById(e))return;const t=document.createElement("style");t.id=e;t.innerHTML=`...`,document.head.appendChild(t)};
+    // --- UI HELPER FUNCTIONS (RESTORED) ---
+    const injectStyles=()=>{const e="gemini-summarizer-styles";if(document.getElementById(e))return;const t=document.createElement("style");t.id=e;t.innerHTML=`\n            .floating-ai-button-container { position: fixed !important; bottom: 30px !important; right: 30px !important; z-index: 999999 !important; display: flex; align-items: center; background: #007bff; border-radius: 50px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }\n            .floating-ai-main-btn { background: transparent; border: none; padding: 12px 16px; cursor: pointer; display: flex; align-items: center; color: white; font-weight: 500; font-size: 16px; gap: 8px; }\n            .floating-ai-settings-btn { background: rgba(255,255,255,0.2); border: none; border-left: 1px solid rgba(255,255,255,0.3); padding: 8px; cursor: pointer; color: white; display:flex; align-items:center; border-top-right-radius: 50px; border-bottom-right-radius: 50px; }\n            .floating-ai-settings-btn:hover { background: rgba(0,0,0,0.2); }\n            .gemini-modal-overlay { position: fixed !important; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 999998 !important; display: flex; align-items: center; justify-content: center; }\n            .gemini-modal-content { background-color: white; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.25); width: 90%; max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; }\n            .gemini-modal-header { padding: 16px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; } .gemini-modal-header h2 { margin: 0; font-size: 18px; color: #333; }\n            .gemini-modal-close { font-size: 24px; font-weight: bold; cursor: pointer; color: #888; border: none; background: none; }\n            .gemini-modal-body { padding: 16px; overflow-y: auto; font-family: sans-serif; flex-grow: 1; line-height: 1.5; white-space: normal; background-color: #fff;}\n            .gemini-modal-footer { padding: 12px 16px; border-top: 1px solid #e0e0e0; display: flex; gap: 10px; justify-content: flex-end; }\n            .gemini-modal-button { padding: 8px 16px; border-radius: 6px; border: 1px solid #ccc; background-color: #f0f0f0; cursor: pointer; font-weight: 500; } .gemini-modal-button:hover { background-color: #e0e0e0; } .gemini-modal-button.primary { background-color: #007bff; color: white; border-color: #007bff; } .gemini-modal-button.primary:hover { background-color: #0056b3; }\n            .gemini-toast { position: fixed !important; top: 20px; right: 20px; background-color: #333; color: white; padding: 12px 20px; border-radius: 6px; z-index: 1000000 !important; font-size: 14px; transition: opacity 0.5s; opacity: 1; }\n            .settings-section { margin-bottom: 20px; } .settings-section h3 { margin:0 0 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; } .settings-section label { display: block; margin-bottom: 5px; font-weight: bold; }\n            .settings-section input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }\n            .sections-grid, .model-selection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } .model-selection-grid label { font-weight: normal; } .sections-grid label { font-weight: normal; }\n            .chat-log { display: flex; flex-direction: column; gap: 12px; font-family: sans-serif; } .message-bubble { padding: 10px 14px; border-radius: 18px; max-width: 80%; line-height: 1.5; white-space: pre-wrap; word-break: break-word; } .message-bubble.user { background-color: #007bff; color: white; align-self: flex-end; } .message-bubble.model { background-color: #e9e9eb; color: #1c1c1e; align-self: flex-start; } .message-bubble.loading { align-self: flex-start; } .message-bubble.error { background-color: #ffcccc; color: #a00; }\n            .chat-input-form { display: flex; gap: 10px; padding: 10px 16px; border-top: 1px solid #e0e0e0; } #chat-input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 20px; } #chat-send-btn { background: #007bff; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }\n        `,document.head.appendChild(t)};
     const showToast=(e,t="success")=>{const o=document.createElement("div");o.className=`gemini-toast ${t}`,o.textContent=e,document.body.appendChild(o),setTimeout(()=>{o.style.opacity="0",setTimeout(()=>o.remove(),500)},3e3)};
     const manageApiKeys=()=>{const e=localStorage.getItem(GEMINI_KEY_NAME)||"";const t=prompt("Enter your Gemini API Key:",e);null!==t&&(t.trim()?localStorage.setItem(GEMINI_KEY_NAME,t.trim()):localStorage.removeItem(GEMINI_KEY_NAME));const o=localStorage.getItem(OPENAI_KEY_NAME)||"";const n=prompt("Enter your OpenAI API Key:",o);null!==n&&(n.trim()?localStorage.setItem(OPENAI_KEY_NAME,n.trim()):localStorage.removeItem(OPENAI_KEY_NAME));showToast("API Keys updated!","success")};
-
-    const showExecutionOptionsModal = () => {
-        const overlay = document.createElement('div');
-        overlay.className = 'gemini-modal-overlay options-modal';
-        const sectionsHtml = Object.keys(PROMPT_SECTIONS).map(key => `<label><input type="checkbox" name="section" value="${key}" checked>${key.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}</label>`).join('');
-        overlay.innerHTML = `<div class="gemini-modal-content"><div class="gemini-modal-header"><h2>Generate Summary Options</h2><button class="gemini-modal-close">×</button></div><div class="gemini-modal-body" style="font-family: sans-serif; white-space: normal; line-height: 1.5; background-color: #fff;"><div class="settings-section"><h3>AI Model</h3><div class="model-selection-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"><label><input type="radio" name="model" value="gemini-1.5-flash-latest" checked> Gemini 1.5 Flash</label><label><input type="radio" name="model" value="gpt-4o"> GPT-4o</label><label><input type="radio" name="model" value="gpt-4-turbo"> GPT-4 Turbo</label></div></div><div class="settings-section"><h3>Output Sections</h3><div class="sections-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">${sectionsHtml}</div></div></div><div class="gemini-modal-footer" style="padding: 12px 16px; border-top: 1px solid #e0e0e0; display: flex; justify-content: flex-end; gap: 10px;"><button class="gemini-modal-button" id="cancel-run">Cancel</button><button class="gemini-modal-button primary" id="generate-summary">Generate Summary</button></div></div>`;
-        document.body.appendChild(overlay);
-        const closeModal = () => overlay.remove();
-        overlay.querySelector('.gemini-modal-close').addEventListener('click', closeModal);
-        overlay.querySelector('#cancel-run').addEventListener('click', closeModal);
-        overlay.querySelector('#generate-summary').addEventListener('click', () => {
-            const modelName = overlay.querySelector('input[name="model"]:checked').value;
-            const selectedSections = Array.from(overlay.querySelectorAll('input[name="section"]:checked')).map(el => el.value);
-            if (selectedSections.length > 0) { closeModal(); runSummaryProcess(modelName, selectedSections); }
-            else { showToast("Please select at least one output section.", "error"); }
-        });
-    };
-    
-    const showChatModal = (initialHistory, filename, modelType) => {
-        let chatHistory = [...initialHistory];
-        const overlay = document.createElement('div');
-        overlay.className = 'gemini-modal-overlay chat-modal';
-        overlay.innerHTML = `<div class="gemini-modal-content"><div class="gemini-modal-header"><h2>AI Summary & Refinement</h2><button class="gemini-modal-close">×</button></div><div class="gemini-modal-body" style="background-color:white;"><div class="chat-log" style="display:flex; flex-direction:column; gap:12px;"></div></div><form class="chat-input-form"><input type="text" id="chat-input" placeholder="Refine the summary..." autocomplete="off"><button type="submit" id="chat-send-btn" title="Send">${sendIconSVG}</button></form><div class="gemini-modal-footer"><button class="gemini-modal-button download-btn">Download Last</button><button class="gemini-modal-button primary copy-btn">Copy Last</button></div></div>`;
-        document.body.appendChild(overlay);
-
-        const chatLog = overlay.querySelector('.chat-log');
-        const chatInput = overlay.querySelector('#chat-input');
-        const chatForm = overlay.querySelector('.chat-input-form');
-        const closeModal = () => overlay.remove();
-
-        const appendMessage = (sender, text) => {
-            const bubble = document.createElement('div');
-            bubble.className = `message-bubble ${sender}`;
-            bubble.textContent = text;
-            chatLog.appendChild(bubble);
-            chatLog.scrollTop = chatLog.scrollHeight;
-            return bubble;
-        };
-        
-        const initialAiResponse = chatHistory.find(h => h.role === 'model')?.parts[0]?.text;
-        if (initialAiResponse) appendMessage('model', initialAiResponse);
-
-        const sendChatMessage = async (message) => {
-            appendMessage('user', message); chatInput.value = '';
-            const loadingBubble = appendMessage('model loading', '...');
-            chatHistory.push({ role: 'user', parts: [{ text: message }] });
-            try {
-                let apiUrl, apiKey, payload, headers;
-                if (modelType.startsWith('gemini')) {
-                    apiKey = localStorage.getItem(GEMINI_KEY_NAME);
-                    apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
-                    payload = { contents: chatHistory };
-                    headers = { 'Content-Type': 'application/json' };
-                } else {
-                    apiKey = localStorage.getItem(OPENAI_KEY_NAME);
-                    apiUrl = 'https://api.openai.com/v1/chat/completions';
-                    const openAiMessages = chatHistory.map(({ role, parts }) => ({ role: role === 'model' ? 'assistant' : role, content: parts[0].text }));
-                    payload = { model: modelType, messages: openAiMessages, max_tokens: 4096 };
-                    headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` };
-                }
-                const response = await fetch(apiUrl, { method: 'POST', headers: headers, body: JSON.stringify(payload) });
-                if (!response.ok) throw new Error(`API Error: ${await response.text()}`);
-                const data = await response.json();
-                const newText = modelType.startsWith('gemini') ? data.candidates?.[0]?.content?.parts?.[0]?.text : data.choices?.[0]?.message?.content;
-                if (!newText) throw new Error("Received an empty response from AI.");
-                chatHistory.push({ role: 'model', parts: [{ text: newText }] });
-                loadingBubble.remove();
-                appendMessage('model', newText);
-            } catch(error) { loadingBubble.remove(); appendMessage('error', `Error: ${error.message}`); console.error(error); }
-        };
-
-        chatForm.addEventListener('submit', (e) => { e.preventDefault(); const message = chatInput.value.trim(); if (message) sendChatMessage(message); });
-        overlay.querySelector('.gemini-modal-close').addEventListener('click', closeModal);
-        overlay.querySelector('.copy-btn').addEventListener('click', () => { const last = chatLog.querySelector('.message-bubble.model:last-child'); if (last) navigator.clipboard.writeText(last.textContent).then(() => showToast('Copied!')); });
-        overlay.querySelector('.download-btn').addEventListener('click', () => { const last = chatLog.querySelector('.message-bubble.model:last-child'); if (last) { const blob = new Blob([last.textContent], { type: 'text/plain;charset=utf-8' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = filename; link.click(); URL.revokeObjectURL(link.href); } });
-    };
+    const showChatModal=(initialHistory,filename,modelType)=>{let chatHistory=[...initialHistory];const overlay=document.createElement("div");overlay.className="gemini-modal-overlay chat-modal",overlay.innerHTML=`<div class="gemini-modal-content"><div class="gemini-modal-header"><h2>AI Summary & Refinement</h2><button class="gemini-modal-close">×</button></div><div class="gemini-modal-body" style="background-color:white;"><div class="chat-log"></div></div><form class="chat-input-form"><input type="text" id="chat-input" placeholder="Refine the summary..." autocomplete="off"><button type="submit" id="chat-send-btn" title="Send">${sendIconSVG}</button></form><div class="gemini-modal-footer"><button class="gemini-modal-button download-btn">Download Last</button><button class="gemini-modal-button primary copy-btn">Copy Last</button></div></div>`,document.body.appendChild(overlay);const chatLog=overlay.querySelector(".chat-log"),chatInput=overlay.querySelector("#chat-input"),chatForm=overlay.querySelector(".chat-input-form"),closeModal=()=>overlay.remove();const appendMessage=(sender,text)=>{const bubble=document.createElement("div");return bubble.className=`message-bubble ${sender}`,bubble.textContent=text,chatLog.appendChild(bubble),chatLog.scrollTop=chatLog.scrollHeight,bubble};const initialAiResponse=chatHistory.find(h=>"model"===h.role)?.parts[0]?.text;initialAiResponse&&appendMessage("model",initialAiResponse);const sendChatMessage=async message=>{appendMessage("user",message),chatInput.value="";const loadingBubble=appendMessage("model loading","...");chatHistory.push({role:"user",parts:[{text:message}]});try{let apiUrl,apiKey,payload,headers;if(modelType.startsWith("gemini")){apiKey=localStorage.getItem(GEMINI_KEY_NAME),apiUrl=`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,payload={contents:chatHistory},headers={"Content-Type":"application/json"}}else{apiKey=localStorage.getItem(OPENAI_KEY_NAME),apiUrl="https://api.openai.com/v1/chat/completions";const openAiMessages=chatHistory.map(({role:role,parts:parts})=>({role:"model"===role?"assistant":role,content:parts[0].text}));payload={model:modelType,messages:openAiMessages,max_tokens:4096},headers={"Content-Type":"application/json",Authorization:`Bearer ${apiKey}`}}const response=await fetch(apiUrl,{method:"POST",headers:headers,body:JSON.stringify(payload)});if(!response.ok)throw new Error(`API Error: ${await response.text()}`);const data=await response.json();const newText=modelType.startsWith("gemini")?data.candidates?.[0]?.content?.parts?.[0]?.text:data.choices?.[0]?.message?.content;if(!newText)throw new Error("Received an empty response from AI.");chatHistory.push({role:"model",parts:[{text:newText}]}),loadingBubble.remove(),appendMessage("model",newText)}catch(error){loadingBubble.remove(),appendMessage("error",`Error: ${error.message}`),console.error(error)}};chatForm.addEventListener("submit",e=>{e.preventDefault();const message=chatInput.value.trim();message&&sendChatMessage(message)}),overlay.querySelector(".gemini-modal-close").addEventListener("click",closeModal),overlay.querySelector(".copy-btn").addEventListener("click",()=>{const last=chatLog.querySelector(".message-bubble.model:last-child");last&&navigator.clipboard.writeText(last.textContent).then(()=>showToast("Copied!"))}),overlay.querySelector(".download-btn").addEventListener("click",()=>{const last=chatLog.querySelector(".message-bubble.model:last-child");if(last){const blob=new Blob([last.textContent],{type:"text/plain;charset=utf-8"}),link=document.createElement("a");link.href=URL.createObjectURL(blob),link.download=filename,link.click(),URL.revokeObjectURL(link.href)}})};
+    const showExecutionOptionsModal=()=>{const e=document.createElement("div");e.className="gemini-modal-overlay options-modal";const t=Object.keys(PROMPT_SECTIONS).map(e=>`<label><input type="checkbox" name="section" value="${e}" checked>${e.replace(/_/g," ").replace(/\b\w/g,e=>e.toUpperCase())}</label>`).join("");e.innerHTML=`<div class="gemini-modal-content"><div class="gemini-modal-header"><h2>Generate Summary Options</h2><button class="gemini-modal-close">×</button></div><div class="gemini-modal-body"><div class="settings-section"><h3>AI Model</h3><div class="model-selection-grid"><label><input type="radio" name="model" value="gemini-1.5-flash-latest" checked> Gemini 1.5 Flash</label><label><input type="radio" name="model" value="gpt-4o"> GPT-4o</label><label><input type="radio" name="model" value="gpt-4-turbo"> GPT-4 Turbo</label></div></div><div class="settings-section"><h3>Output Sections</h3><div class="sections-grid">${t}</div></div></div><div class="gemini-modal-footer"><button class="gemini-modal-button" id="cancel-run">Cancel</button><button class="gemini-modal-button primary" id="generate-summary">Generate Summary</button></div></div>`,document.body.appendChild(e);const o=()=>e.remove();e.querySelector(".gemini-modal-close").addEventListener("click",o),e.querySelector("#cancel-run").addEventListener("click",o),e.querySelector("#generate-summary").addEventListener("click",()=>{const t=e.querySelector('input[name="model"]:checked').value,n=Array.from(e.querySelectorAll('input[name="section"]:checked')).map(e=>e.value);n.length>0?(o(),runSummaryProcess(t,n)):showToast("Please select at least one output section.","error")})};
 
     // --- CORE LOGIC ---
-    const getAuthToken=()=>{/*...*/};
-    const generateUsefulFilename=(e)=>{/*...*/};
-    const buildDynamicPrompt=(e)=>{/*...*/};
+    const getCookie=(e)=>{const t=`; ${document.cookie}`,o=t.split(`; ${e}=`);if(2===o.length)return o.pop().split(";").shift()};
+    const setCookie=(name,value,days=7)=>{let expires="";if(days){const date=new Date;date.setTime(date.getTime()+24*days*60*60*1e3),expires="; expires="+date.toUTCString()}document.cookie=`${name}=${value||""}${expires}; path=/`};
+    const getAuthToken=()=>{return new Promise((resolve,reject)=>{const cookieToken=getCookie(AUTH_COOKIE_NAME);if(cookieToken)return resolve(cookieToken);let capturedAuthToken=null;const originalFetch=window.fetch,originalXhrSetRequestHeader=XMLHttpRequest.prototype.setRequestHeader,cleanup=()=>{window.fetch=originalFetch,XMLHttpRequest.prototype.setRequestHeader=originalXhrSetRequestHeader};window.fetch=function(...args){const headers=args[1]?.headers;if(headers&&(headers.Authorization||headers.authorization))capturedAuthToken=headers.Authorization||headers.authorization;return originalFetch.apply(this,args)};XMLHttpRequest.prototype.setRequestHeader=function(header,value){if(header.toLowerCase()==='authorization')capturedAuthToken=value;return originalXhrSetRequestHeader.apply(this,arguments)};let attempts=0;const interval=setInterval(()=>{if(capturedAuthToken){clearInterval(interval);cleanup();setCookie(AUTH_COOKIE_NAME,capturedAuthToken);resolve(capturedAuthToken)}else if(attempts++>60){clearInterval(interval);cleanup();reject(new Error("Auth token capture timeout."))}},250)})};
+    const generateUsefulFilename=(e)=>{const t=new Date,o=e=>e.toString().padStart(2,"0"),n=`${t.getFullYear()}-${o(t.getMonth()+1)}-${o(t.getDate())}_${o(t.getHours())}-${o(t.getMinutes())}`;let s=document.querySelector('[data-test-id="conversation-header-title"]');return s=s&&s.textContent.trim()?s.textContent.trim().replace(/[^\w\s-]/g,"").trim().replace(/\s+/g,"-"):e,`${n}_${s}_OpenPhone_Summary.txt`};
+    const buildDynamicPrompt=(e)=>{let t="";e.forEach(e=>{PROMPT_SECTIONS[e]&&(t+=PROMPT_SECTIONS[e]+"\n")});return BASE_PROMPT_HEADER+t+BASE_PROMPT_FOOTER};
+    
     const runSummaryProcess = async (modelName, selectedSections) => {
         const geminiApiKey = localStorage.getItem(GEMINI_KEY_NAME);
         const openaiApiKey = localStorage.getItem(OPENAI_KEY_NAME);
@@ -114,9 +43,11 @@
         try {
             let authToken = await getAuthToken();
             const conversationId = window.location.href.split('/').find(p => p.startsWith('CN'));
-            if (!conversationId) throw new Error("Could not find Conversation ID in URL.");
+            if (!conversationId) throw new Error("Could not find Conversation ID in URL. Please navigate to a conversation.");
+            
             const openPhoneApiUrl = `https://communication.openphoneapi.com/v2/activity?id=${conversationId}&last=51`;
             let apiResponse = await fetch(openPhoneApiUrl, { headers: { 'Authorization': authToken } });
+
             if (apiResponse.status === 401) {
                 showToast("Auth token expired. Capturing a new one...", "error");
                 setCookie(AUTH_COOKIE_NAME, '', -1);
@@ -124,11 +55,13 @@
                 apiResponse = await fetch(openPhoneApiUrl, { headers: { 'Authorization': authToken }});
             }
             if (!apiResponse.ok) throw new Error(`OpenPhone API request failed: ${apiResponse.status}`);
+            
             const openPhoneData = await apiResponse.json();
             if (openPhoneData.result.length === 0) return showToast("No activities found to summarize.", "error");
             
             const dynamicPrompt = buildDynamicPrompt(selectedSections);
             const textContent = dynamicPrompt + JSON.stringify(openPhoneData, null, 2);
+            
             let imagePayloads = [];
             const imageActivities = openPhoneData.result.filter(activity => activity.media?.some(m => m.type.startsWith('image/')));
             if (imageActivities.length > 0) {
@@ -191,7 +124,7 @@
         console.log("✅ Floating AI Summarizer button added.");
     };
 
-    console.log("🚀 Initializing OpenPhone AI Summarizer v32...");
+    console.log("🚀 Initializing OpenPhone AI Summarizer v33...");
     injectStyles();
     createFloatingButton();
 })();
